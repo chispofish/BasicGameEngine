@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 //------------------------------------------------------------------------------------
 // Configuracion de la ventana
@@ -34,6 +35,15 @@ struct ConfigVentana
 struct EventosFrame
 {
 	bool salir = false;          // SDL_QUIT, cierre de ventana o tecla ESC
+};
+
+//------------------------------------------------------------------------------------
+// Dedo apoyado en la pantalla (coordenadas en pixeles de la ventana)
+//------------------------------------------------------------------------------------
+struct Toque
+{
+	std::int64_t id = 0;
+	int x = 0, y = 0;
 };
 
 //------------------------------------------------------------------------------------
@@ -73,6 +83,18 @@ public:
 	int  RatonX() const noexcept { return m_ratonX; }
 	int  RatonY() const noexcept { return m_ratonY; }
 
+	// Pantalla tactil. Los dedos NO generan eventos de raton (SDL_HINT_TOUCH_MOUSE_EVENTS=0).
+	//  - ToquesActivos: dedos apoyados ahora mismo (maximo kMaxToques).
+	//  - TomarToquesNuevos: posiciones donde se POSO un dedo desde la ultima llamada. Se
+	//    conservan hasta que alguien los toma, asi un toque rapido (poner y quitar el dedo
+	//    entre dos tics de logica) no se pierde nunca.
+	//  - UltimaEntradaTactil: true si lo ultimo que uso el jugador fue un dedo (false: teclado).
+	static constexpr std::size_t kMaxToques = 10;
+	const std::vector<Toque>& ToquesActivos() const noexcept { return m_toques; }
+	std::vector<SDL_Point>    TomarToquesNuevos();
+	bool UltimaEntradaTactil() const noexcept { return m_entradaTactil; }
+	void MarcarEntradaTactil(bool tactil) noexcept { m_entradaTactil = tactil; }   // p. ej. al detectar un movil
+
 private:
 	// Subsistema SDL: se declara primero para destruirse el ultimo
 	struct ContextoSdl
@@ -104,5 +126,8 @@ private:
 	int  m_ratonX      = 0;
 	int  m_ratonY      = 0;
 	std::uint32_t m_botonesRaton = 0;
+	std::vector<Toque>     m_toques;
+	std::vector<SDL_Point> m_toquesNuevos;
+	bool m_entradaTactil = false;
 	std::array<bool, SDL_NUM_SCANCODES> m_teclas{};
 };

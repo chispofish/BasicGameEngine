@@ -27,8 +27,8 @@ velocidad aumenta con el tiempo. En la web es el `index.html` publicado.
 | R3.3. HUD | `src/Hud.*` — puntos, mejor puntuación, velocidad y mensajes con `Dibujante::Texto` | `tests/test_partida.cpp` (3.3) |
 | R3.4. Assets web | `CMakeLists.txt` — `--preload-file assets@/assets` empaqueta `assets/` en `index.data` | CI (3.4) |
 
-`assets/avatar_run.bmp` (6 fotogramas de 16x24: 4 de carrera, salto, caída) se regenera con
-`python3 tools/generar_avatar.py`. Nativo: `./build/runner`. La demo antigua del motor sigue en
+`assets/avatar_run.bmp` (6 fotogramas de 64x90: 4 de trote, salto, caída) se genera desde `tools/avatar_fuente.webp` con
+`python3 tools/generar_avatar.py` (requiere Pillow y numpy). Nativo: `./build/runner`. La demo antigua del motor sigue en
 `./build/juego` (solo nativo).
 
 > En Emscripten los archivos del disco no existen: `--preload-file` los empaqueta en `index.data`

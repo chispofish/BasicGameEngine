@@ -7,7 +7,7 @@
 //   semi-implicita a paso fijo, pensada para Juego::Actualizar(dt) a 60 Hz).
 // - Estados: Corriendo (en el suelo), Saltando (subiendo), Cayendo (bajando).
 //
-// Disposicion de la hoja de sprites (assets/avatar_run.bmp), todos los fotogramas del
+// Disposicion de la hoja de sprites (assets/avatar_run.bmp, ver tools/generar_avatar.py), todos los fotogramas del
 // mismo tamano en una sola fila:
 //     [0..framesCorrer-1] ciclo de carrera | [frameSalto] subiendo | [frameCaida] bajando
 //
@@ -55,9 +55,14 @@ struct ConfigJugador
 {
 	int    x              = 80;      // borde izquierdo fijo del sprite (px)
 	double ySuelo         = 400.0;   // Y del suelo: donde apoyan los pies (px)
-	int    anchoFrame     = 16;      // tamano de un fotograma en la hoja (px)
-	int    altoFrame      = 24;
-	int    escala         = 3;       // el pixel art se amplia por enteros
+	int    anchoFrame     = 64;      // tamano de un fotograma en la hoja (px)
+	int    altoFrame      = 90;
+	int    escala         = 1;       // ampliacion entera del sprite al dibujarlo
+	// Caja de colision = fotograma recortado (px de la hoja). Mas pequena que lo visible a
+	// proposito: cabeza, gorra y manos sobresalen y no deben matar al jugador por rozar.
+	int    insetX         = 12;      // por cada lado
+	int    insetArriba    = 14;
+	int    insetAbajo     = 5;       // los fotogramas de trote elevan al avatar 5 px
 	double gravedad       = 1800.0;  // px/s^2 hacia abajo
 	double velocidadSalto = 620.0;   // px/s hacia arriba en el instante del salto
 	int    ticsPorFrame   = 6;       // 6 tics a 60 Hz = 10 fotogramas/s de carrera

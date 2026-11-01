@@ -121,6 +121,8 @@ struct Caja4 { int x0 = 1000, y0 = 1000, x1 = -1, y1 = -1; };
 
 std::vector<Caja4> CajasOpacas()
 {
+	const ConfigJugador cfg;
+	const int fw = cfg.anchoFrame;
 	std::vector<Caja4> res(6);
 	SDL_Surface* bmp = SDL_LoadBMP(BGE_ASSETS_DIR "/avatar_run.bmp");
 	if (!bmp) return res;
@@ -131,8 +133,8 @@ std::vector<Caja4> CajasOpacas()
 		{
 			const auto p = static_cast<std::uint32_t*>(s->pixels)[y * s->pitch / 4 + x] & 0xFFFFFFu;
 			if (p == 0xFF00FFu) continue;
-			Caja4& c = res[static_cast<std::size_t>(x / 16)];
-			c.x0 = std::min(c.x0, x % 16); c.x1 = std::max(c.x1, x % 16);
+			Caja4& c = res[static_cast<std::size_t>(x / fw)];
+			c.x0 = std::min(c.x0, x % fw); c.x1 = std::max(c.x1, x % fw);
 			c.y0 = std::min(c.y0, y);      c.y1 = std::max(c.y1, y);
 		}
 	SDL_FreeSurface(s);
@@ -171,8 +173,11 @@ void Test_3_2()
 	            uni.x0, uni.x1, uni.y0, uni.y1, cx0, cx1, cy0, cy1);
 	CHECK(cx0 >= uni.x0 && cx1 <= uni.x1 && cy0 >= uni.y0 && cy1 <= uni.y1,
 	      "la caja de colision queda dentro del area visible del avatar (sin falsos positivos en margenes)");
-	CHECK(cx0 - uni.x0 <= 2 && uni.x1 - cx1 <= 2 && cy0 - uni.y0 <= 2 && uni.y1 - cy1 <= 2,
-	      "y cubre casi todo el area visible (a menos de 2 pixeles de sprite por lado)");
+	const double areaCaja = double(cx1 - cx0 + 1) * (cy1 - cy0 + 1);
+	const double areaVisible = double(uni.x1 - uni.x0 + 1) * (uni.y1 - uni.y0 + 1);
+	std::printf("         la caja cubre el %.0f%% del rectangulo visible\n", 100.0 * areaCaja / areaVisible);
+	CHECK(areaCaja >= 0.45 * areaVisible,
+	      "y cubre una parte sustancial del avatar (>=45%: cabeza, gorra y manos no cuentan; no es una caja diminuta)");
 	bool porFrame = true;
 	for (const auto& c : cajas) if (cx0 < c.x0 - 1 || cx1 > c.x1 + 1 || cy0 < c.y0 - 1 || cy1 > c.y1 + 1) porFrame = false;
 	CHECK(porFrame, "en cada fotograma sobresale como mucho 1 pixel del sprite visible");

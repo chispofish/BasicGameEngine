@@ -13,6 +13,19 @@ Migrado desde la versión original basada en Win32.
 | 3. Renderizado 2D | `src/Dibujante.*` — primitivas, texto bitmap 5x7; el motor limpia el fondo en cada frame | `tests/test_graficos.cpp` (3.1, 3.2) |
 | 4. Build y CI/CD | `CMakeLists.txt`, `web/minimal_shell.html`, `.github/workflows/deploy.yml` | CI (4.1, 4.2) |
 
+## Juego Runner (en desarrollo)
+
+Juego "runner" horizontal construido sobre el motor. Progreso por módulos:
+
+| Módulo | Contenido | QA |
+|---|---|---|
+| R1. Texturas | `src/Textura.*` — carga de BMP con SDL2 (sin SDL_image), color clave magenta / alfa → `SDL_Texture` RAII | `tests/test_jugador.cpp` (1.1, 1.2) |
+| R2. Jugador | `src/Jugador.*` — estados Corriendo/Saltando/Cayendo, gravedad, suelo, animación por tics | `tests/test_jugador.cpp` (2.1, 2.2) |
+| R3. Obstáculos, colisiones y HUD | pendiente | pendiente |
+
+`assets/avatar_run.bmp` (6 fotogramas de 16x24: 4 de carrera, salto, caída) se regenera con
+`python3 tools/generar_avatar.py`. Banco de pruebas visual: `./build/runner` (ESPACIO / ↑ para saltar).
+
 ## Compilar y probar en nativo
 
 ```bash

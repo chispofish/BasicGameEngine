@@ -11,8 +11,10 @@ endif()
 
 option(BGE_SANITIZE "Compilar con AddressSanitizer/UBSan (solo nativo)" OFF)
 
-# --- Biblioteca del motor (Modulos 1, 2 y 3) ------------------------------------
-add_library(nucleo STATIC src/Ventana.cpp src/NucleoMotor.cpp src/Dibujante.cpp)
+# --- Biblioteca del motor (Modulos 1, 2 y 3) y del Runner (texturas, jugador) ---
+add_library(nucleo STATIC
+  src/Ventana.cpp src/NucleoMotor.cpp src/Dibujante.cpp
+  src/Textura.cpp src/Jugador.cpp)
 target_include_directories(nucleo PUBLIC src)
 
 if(EMSCRIPTEN)
@@ -49,6 +51,13 @@ if(EMSCRIPTEN)
     $<$<CONFIG:Debug>:-sASSERTIONS=1>)
 endif()
 
+# --- Runner (banco de pruebas visual; solo nativo hasta el Modulo 3) ---------------
+if(NOT EMSCRIPTEN)
+  add_executable(runner src/runner.cpp)
+  target_link_libraries(runner PRIVATE nucleo)
+  target_compile_definitions(runner PRIVATE BGE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
+endif()
+
 # --- Pruebas de QA (solo nativo) ---------------------------------------------------
 if(NOT EMSCRIPTEN)
   enable_testing()
@@ -62,5 +71,10 @@ if(NOT EMSCRIPTEN)
   target_link_libraries(test_graficos PRIVATE nucleo)
   add_test(NAME qa_modulo_3 COMMAND test_graficos)
 
-  set_tests_properties(qa_modulos_1_2 qa_modulo_3 PROPERTIES ENVIRONMENT "${BGE_TEST_ENV}")
+  add_executable(test_jugador tests/test_jugador.cpp)
+  target_link_libraries(test_jugador PRIVATE nucleo)
+  target_compile_definitions(test_jugador PRIVATE BGE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
+  add_test(NAME qa_runner_modulos_1_2 COMMAND test_jugador)
+
+  set_tests_properties(qa_modulos_1_2 qa_modulo_3 qa_runner_modulos_1_2 PROPERTIES ENVIRONMENT "${BGE_TEST_ENV}")
 endif()

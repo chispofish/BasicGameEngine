@@ -27,7 +27,16 @@ namespace Hud
 	{
 		bool sonidoActivo   = true;    // indicador "M: SONIDO"
 		bool resaltarPuntos = false;   // la puntuacion brilla un instante al superar un hito
+		bool tactil         = false;   // movil: textos de toque y boton de sonido grande
 	};
+
+	// Textos segun el dispositivo de entrada
+	std::string TextoInstrucciones(bool tactil);   // "TOCA LA PANTALLA PARA SALTAR" / "ESPACIO / FLECHA ARRIBA: SALTAR"
+	std::string TextoReinicio(bool tactil);        // "TOCA PARA REINICIAR" / "ESPACIO: REINICIAR"
+
+	// Boton de sonido tactil (esquina inferior derecha, sobre el suelo). Es la UNICA fuente
+	// de verdad: el HUD lo dibuja y ControlTactil lo usa para detectar el toque.
+	SDL_Rect RectBotonSonido(int ancho, int alto);
 
 	// Texto con sombra (legible sobre el degradado del cielo)
 	int TextoSombra(const Dibujante& d, int x, int y, const std::string& t, Color c, int escala);

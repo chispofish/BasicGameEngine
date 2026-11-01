@@ -4,6 +4,8 @@
 //------------------------------------------------------------------------------------
 #include "Ventana.h"
 
+#include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 //------------------------------------------------------------------------------------
@@ -11,6 +13,8 @@
 //------------------------------------------------------------------------------------
 Ventana::ContextoSdl::ContextoSdl()
 {
+	// Los dedos se tratan como dedos (SDL_FINGER*), sin duplicarlos como clics de raton
+	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
 		throw std::runtime_error(std::string("SDL_Init fallo: ") + SDL_GetError());
 }
@@ -88,7 +92,32 @@ EventosFrame Ventana::ProcesarEventos()
 			}
 			break;
 
+		case SDL_FINGERDOWN:
+		case SDL_FINGERMOTION:
+		case SDL_FINGERUP:
+		{
+			m_entradaTactil = true;
+			const int x = static_cast<int>(std::lround(e.tfinger.x * m_config.ancho));
+			const int y = static_cast<int>(std::lround(e.tfinger.y * m_config.altura));
+			const std::int64_t id = e.tfinger.fingerId;
+			auto it = std::find_if(m_toques.begin(), m_toques.end(), [id](const Toque& t) { return t.id == id; });
+			if (e.type == SDL_FINGERUP)
+			{
+				if (it != m_toques.end()) m_toques.erase(it);
+				break;
+			}
+			if (it != m_toques.end()) { it->x = x; it->y = y; }
+			else if (m_toques.size() < kMaxToques) m_toques.push_back(Toque{ id, x, y });
+			if (e.type == SDL_FINGERDOWN)
+			{
+				if (m_toquesNuevos.size() >= 16) m_toquesNuevos.erase(m_toquesNuevos.begin());   // acotado
+				m_toquesNuevos.push_back(SDL_Point{ x, y });
+			}
+			break;
+		}
+
 		case SDL_KEYDOWN:
+			m_entradaTactil = false;
 			if (m_config.escSale && e.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
 				resultado.salir = true;
 			if (e.key.keysym.scancode < SDL_NUM_SCANCODES)
@@ -138,8 +167,17 @@ bool Ventana::BotonRaton(std::uint8_t boton) const noexcept
 	return (m_botonesRaton & SDL_BUTTON(boton)) != 0;
 }
 
+std::vector<SDL_Point> Ventana::TomarToquesNuevos()
+{
+	std::vector<SDL_Point> r;
+	r.swap(m_toquesNuevos);
+	return r;
+}
+
 void Ventana::LiberarEntrada() noexcept
 {
+	m_toques.clear();
+	m_toquesNuevos.clear();
 	m_teclas.fill(false);
 	m_botonesRaton = 0;
 }

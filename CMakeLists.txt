@@ -15,7 +15,7 @@ option(BGE_SANITIZE "Compilar con AddressSanitizer/UBSan (solo nativo)" OFF)
 add_library(nucleo STATIC
   src/Ventana.cpp src/NucleoMotor.cpp src/Dibujante.cpp
   src/Textura.cpp src/Jugador.cpp src/Obstaculos.cpp src/Partida.cpp src/Hud.cpp
-  src/Escenario.cpp src/Efectos.cpp src/Sonido.cpp)
+  src/Escenario.cpp src/Efectos.cpp src/Sonido.cpp src/ControlTactil.cpp)
 target_include_directories(nucleo PUBLIC src)
 
 if(EMSCRIPTEN)
@@ -93,5 +93,9 @@ if(NOT EMSCRIPTEN)
   target_compile_definitions(test_efectos PRIVATE BGE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
   add_test(NAME qa_runner_modulo_4 COMMAND test_efectos)
 
-  set_tests_properties(qa_modulos_1_2 qa_modulo_3 qa_runner_modulos_1_2 qa_runner_modulo_3 qa_runner_modulo_4 PROPERTIES ENVIRONMENT "${BGE_TEST_ENV}")
+  add_executable(test_tactil tests/test_tactil.cpp)
+  target_link_libraries(test_tactil PRIVATE nucleo)
+  add_test(NAME qa_runner_modulo_5 COMMAND test_tactil)
+
+  set_tests_properties(qa_modulos_1_2 qa_modulo_3 qa_runner_modulos_1_2 qa_runner_modulo_3 qa_runner_modulo_4 qa_runner_modulo_5 PROPERTIES ENVIRONMENT "${BGE_TEST_ENV}")
 endif()

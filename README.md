@@ -26,7 +26,13 @@ velocidad aumenta con el tiempo. En la web es el `index.html` publicado.
 | R3.1/3.2. Obstáculos y colisión AABB | `src/Obstaculos.*`, `src/Partida.*` — generación aleatoria (con semilla), destrucción fuera de pantalla, GAME OVER | `tests/test_partida.cpp` (3.1, 3.2) |
 | R3.3. HUD | `src/Hud.*` — puntos, mejor puntuación, velocidad y mensajes con `Dibujante::Texto` | `tests/test_partida.cpp` (3.3) |
 | R4. Mundo, efectos y sonido | `src/Paleta.h` (colores del avatar), `src/Escenario.*` (parallax), `src/Efectos.*` (partículas, sacudida), `src/Sonido.*` (audio sintetizado) | `tests/test_efectos.cpp` (4.1–4.5) |
+| R5. Móvil | `src/ControlTactil.*` (toques → saltar / sonido), dedos en `src/Ventana.*`, HUD tactil, `web/minimal_shell.html` responsive | `tests/test_tactil.cpp` (5.1–5.4) |
 | R3.4. Assets web | `CMakeLists.txt` — `--preload-file assets@/assets` empaqueta `assets/` en `index.data` | CI (3.4) |
+
+**Móvil:** tocar la pantalla salta (y reinicia tras GAME OVER); un toque justo antes de aterrizar encadena el
+siguiente salto (buffer de 0,1 s). Un botón grande «SONIDO SI/NO» sustituye a la tecla M. Los textos pasan a
+«TOCA…» al detectar un móvil o el primer toque. La página usa toda la pantalla, sin zoom ni desplazamiento, con
+botón de pantalla completa (Android/tablets; iPhone no lo permite en webs) y un aviso para girar el móvil.
 
 **Sonido:** sin archivos de audio. Los efectos (salto, aterrizaje, golpe, hito cada 100 puntos, inicio) y una
 música en bucle de 4 s se sintetizan al arrancar con SDL2 puro (`Sintesis`/`Mezclador`/`Sonido`). Sin dispositivo

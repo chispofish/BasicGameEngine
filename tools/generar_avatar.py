@@ -1,63 +1,84 @@
 #!/usr/bin/env python3
-"""Genera assets/avatar_run.bmp: hoja de sprites 6x(16x24) del avatar (solo biblioteca estandar).
+"""Genera assets/avatar_run.bmp (hoja de sprites) a partir de tools/avatar_fuente.webp.
 
-Fotogramas: 0-3 ciclo de carrera, 4 salto (subiendo), 5 caida. Fondo magenta = transparente
-(el cargador de Textura lo convierte en alfa 0). Uso: python3 tools/generar_avatar.py [salida.bmp]
+Requiere Pillow y numpy (solo para regenerar el asset; el juego no los necesita).
+  python3 tools/generar_avatar.py [fuente.webp] [salida.bmp]
+
+La imagen fuente tiene UNA sola pose, asi que los 6 fotogramas se derivan de ella con
+deformaciones suaves (aplastar / estirar / elevar) que dan sensacion de trote y salto:
+  0..3 ciclo de carrera (contacto, vuelo, contacto, vuelo) | 4 subiendo | 5 bajando
+Para una animacion de piernas real hay que dibujar mas poses y sustituir 'poses' abajo.
+El fondo se rellena con magenta (255,0,255) = color clave que Textura convierte en alfa 0.
 """
-import struct
 import sys
+from pathlib import Path
 
-W, H, N = 16, 24, 6
+import numpy as np
+from PIL import Image
+
+ALTO_SPRITE = 84          # altura del personaje en la hoja (px de pantalla a escala 1)
+CELDA_W, CELDA_H = 64, 90 # tamano de cada fotograma (debe coincidir con ConfigJugador)
+N = 6
 CLAVE = (255, 0, 255)
-PIEL, PELO, CAMISA, PANTALON, ZAPATO, OJO = (240, 190, 150), (70, 45, 30), (60, 120, 220), (45, 50, 100), (235, 235, 240), (20, 20, 30)
+UMBRAL_ALFA = 128         # alfa binario: sin halos al aplicar el color clave
 
 
-def frame(i):
-    px = [[CLAVE] * W for _ in range(H)]
-
-    def r(x0, y0, x1, y1, c):          # rectangulo inclusivo
-        for y in range(y0, y1 + 1):
-            for x in range(x0, x1 + 1):
-                px[y][x] = c
-
-    # Cabeza, pelo y ojo (mira a la derecha)
-    r(5, 1, 10, 6, PIEL); r(5, 1, 10, 2, PELO); r(5, 3, 6, 4, PELO); r(9, 4, 9, 4, OJO)
-    # Torso
-    r(5, 7, 10, 14, CAMISA)
-
-    if i in (0, 2):                    # zancada amplia (2 es el espejo de 0)
-        back, front = (4, 6), (9, 11)
-        if i == 2:
-            back, front = front, back
-        r(back[0], 15, back[1], 21, PANTALON);  r(back[0] - 1, 22, back[1], 23, ZAPATO)
-        r(front[0], 15, front[1], 20, PANTALON); r(front[0], 21, front[1] + 1, 22, ZAPATO)
-        arm_back, arm_front = (3, 4), (11, 12)
-        r(arm_back[0], 8, arm_back[1], 12, PIEL if i == 0 else CAMISA)
-        r(arm_front[0], 8, arm_front[1], 12, CAMISA if i == 0 else PIEL)
-    elif i in (1, 3):                  # piernas juntas, una elevada
-        r(6, 15, 8, 23, PANTALON); r(6, 22, 9, 23, ZAPATO)
-        r(8, 15, 10, 19, PANTALON); r(8, 20, 11, 21, ZAPATO)
-        r(7, 9, 8, 13, PIEL)
-    elif i == 4:                       # salto: rodillas recogidas, brazos arriba
-        r(5, 15, 9, 18, PANTALON); r(9, 17, 10, 19, PANTALON); r(5, 19, 8, 20, ZAPATO); r(9, 20, 11, 21, ZAPATO)
-        r(3, 3, 4, 8, PIEL); r(11, 3, 12, 8, PIEL)
-    else:                              # caida: piernas estiradas, brazos abiertos
-        r(4, 15, 6, 22, PANTALON); r(3, 23, 6, 23, ZAPATO)
-        r(9, 15, 11, 22, PANTALON); r(9, 23, 12, 23, ZAPATO)
-        r(2, 8, 4, 10, PIEL); r(11, 8, 13, 10, PIEL)
-    return px
+def preparar(fuente):
+    im = Image.open(fuente).convert("RGBA")
+    a = np.array(im)
+    ys, xs = np.where(a[..., 3] > 10)
+    im = im.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
+    w = round(im.width * ALTO_SPRITE / im.height)
+    # Pillow redimensiona RGBA con alfa premultiplicado: los bordes no se ensucian
+    return im.resize((w, ALTO_SPRITE), Image.LANCZOS)
 
 
-def main(ruta):
-    ancho = W * N
-    filas = [[frame(f)[y][x] for f in range(N) for x in range(W)] for y in range(H)]
-    datos = b"".join(b"".join(bytes((b, g, rr)) for rr, g, b in fila) for fila in reversed(filas))  # BGR, de abajo arriba
-    cabecera = b"BM" + struct.pack("<IHHI", 54 + len(datos), 0, 0, 54)
-    info = struct.pack("<IiiHHIIiiII", 40, ancho, H, 1, 24, 0, len(datos), 2835, 2835, 0, 0)
-    with open(ruta, "wb") as f:
-        f.write(cabecera + info + datos)
-    print(f"{ruta}: {ancho}x{H}, {N} fotogramas de {W}x{H}")
+def deformar(sprite, ancho_f, alto_f):
+    w, h = sprite.size
+    return sprite.resize((max(1, round(w * ancho_f)), max(1, round(h * alto_f))), Image.NEAREST)
+
+
+def montar(sprite):
+    # (factor ancho, factor alto, elevacion en px, desplazamiento x en px)
+    # El personaje siempre apoya en la base de la celda; el balanceo en x hace que los
+    # cuatro fotogramas de carrera sean distintos entre si.
+    poses = [
+        (1.04, 0.95, 0, -1),   # 0 contacto (aplastado)
+        (1.00, 1.00, 5, -2),   # 1 vuelo
+        (1.04, 0.95, 0, +1),   # 2 contacto
+        (1.00, 1.00, 5, +2),   # 3 vuelo
+        (0.97, 1.05, 0, 0),    # 4 salto: subiendo, estirado
+        (1.03, 0.96, 0, 0),    # 5 caida: aplastandose hacia el suelo
+    ]
+    hoja = Image.new("RGBA", (CELDA_W * N, CELDA_H), (0, 0, 0, 0))
+    for i, (fw, fh, elev, dx) in enumerate(poses):
+        s = deformar(sprite, fw, fh)
+        x = i * CELDA_W + (CELDA_W - s.width) // 2 + dx
+        y = CELDA_H - s.height - elev
+        assert s.width <= CELDA_W and y >= 0, "el sprite no cabe en la celda"
+        hoja.alpha_composite(s, (x, y))
+    return hoja
+
+
+def a_bmp(hoja, salida):
+    a = np.array(hoja)
+    opaco = a[..., 3] >= UMBRAL_ALFA
+    rgb = a[..., :3].copy()
+    # Ningun pixel del personaje puede coincidir con el color clave
+    choque = opaco & (rgb == np.array(CLAVE)).all(-1)
+    rgb[choque] = (254, 0, 255)
+    rgb[~opaco] = CLAVE
+    Image.fromarray(rgb, "RGB").save(salida, format="BMP")   # BMP de 24 bits, sin compresion
+
+
+def main():
+    aqui = Path(__file__).resolve().parent
+    fuente = Path(sys.argv[1]) if len(sys.argv) > 1 else aqui / "avatar_fuente.webp"
+    salida = Path(sys.argv[2]) if len(sys.argv) > 2 else aqui.parent / "assets" / "avatar_run.bmp"
+    sprite = preparar(fuente)
+    a_bmp(montar(sprite), salida)
+    print(f"{salida}: {CELDA_W * N}x{CELDA_H}, {N} fotogramas de {CELDA_W}x{CELDA_H} (personaje {sprite.width}x{sprite.height})")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "assets/avatar_run.bmp")
+    main()

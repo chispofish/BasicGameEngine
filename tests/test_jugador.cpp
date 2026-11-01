@@ -49,7 +49,8 @@ void Rellenar(SDL_Renderer* r, Color c)
 std::vector<std::uint32_t> DibujarFrame(SDL_Renderer* r, const Textura& hoja, int frame, Color fondo, const SDL_Rect& destino)
 {
 	Rellenar(r, fondo);
-	const SDL_Rect origen{ frame * 16, 0, 16, 24 };
+	const ConfigJugador c;
+	const SDL_Rect origen{ frame * c.anchoFrame, 0, c.anchoFrame, c.altoFrame };
 	hoja.Dibujar(r, &origen, destino);
 	return Leer(r);
 }
@@ -67,7 +68,9 @@ void Test_1_1(SDL_Renderer* r)
 	std::printf("Test 1.1: carga de texturas\n");
 	auto hoja = Textura::Cargar(r, std::string(BGE_ASSETS_DIR) + "/avatar_run.bmp");
 	CHECK(hoja != nullptr, "el sprite sheet del avatar se carga (puntero no nulo)");
-	CHECK(hoja && hoja->Ancho() == 96 && hoja->Altura() == 24, "dimensiones 96x24 (6 fotogramas de 16x24)");
+	const ConfigJugador cfgHoja;
+	CHECK(hoja && hoja->Ancho() == 6 * cfgHoja.anchoFrame && hoja->Altura() == cfgHoja.altoFrame,
+	      "dimensiones de la hoja = 6 fotogramas de anchoFrame x altoFrame (segun ConfigJugador)");
 
 	auto falta = Textura::Cargar(r, "assets/no_existe.bmp");
 	CHECK(falta == nullptr, "ruta inexistente -> nullptr, sin excepcion ni cierre");
@@ -93,7 +96,8 @@ void Test_1_2(SDL_Renderer* r)
 	auto hoja = Textura::Cargar(r, std::string(BGE_ASSETS_DIR) + "/avatar_run.bmp");
 	if (!hoja) { CHECK(false, "no se pudo cargar la hoja"); return; }
 
-	const SDL_Rect destino{ 20, 10, 48, 72 };   // escala x3
+	const ConfigJugador cfgHoja;
+	const SDL_Rect destino{ 20, 10, cfgHoja.anchoFrame, cfgHoja.altoFrame };
 	const Color fondos[] = { Colores::Negro, Colores::Blanco, Colores::Verde };
 	for (const Color& f : fondos)
 	{
@@ -213,7 +217,7 @@ void Test_2_2(SDL_Renderer* r)
 	auto hoja = Textura::Cargar(r, std::string(BGE_ASSETS_DIR) + "/avatar_run.bmp");
 	if (hoja)
 	{
-		const SDL_Rect d{ 20, 10, 48, 72 };
+		const SDL_Rect d{ 20, 10, cfg.anchoFrame, cfg.altoFrame };
 		const auto f0 = DibujarFrame(r, *hoja, 0, Colores::Fondo, d);
 		const auto f1 = DibujarFrame(r, *hoja, 1, Colores::Fondo, d);
 		const auto f2 = DibujarFrame(r, *hoja, 2, Colores::Fondo, d);

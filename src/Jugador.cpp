@@ -70,12 +70,12 @@ SDL_Rect Jugador::Rectangulo() const noexcept
 
 SDL_Rect Jugador::CajaColision() const noexcept
 {
-	// Recorta el borde transparente del sprite (en pixeles de la hoja: 4 por cada lado,
-	// 1 por arriba, 2 por abajo) para que la colision sea justa; ver Test 3.2
+	// Recorta los margenes configurados (ver ConfigJugador); Test 3.2 verifica que la caja
+	// queda dentro de lo que realmente se ve del sprite
 	SDL_Rect r = Rectangulo();
-	const int mx = 4 * m_config.escala, my = 1 * m_config.escala;
-	r.x += mx; r.w -= 2 * mx;
-	r.y += my; r.h -= my + 2 * m_config.escala;   // 2 px menos por abajo (el fotograma de salto recoge las piernas)
+	const int e = m_config.escala;
+	r.x += m_config.insetX * e;      r.w -= 2 * m_config.insetX * e;
+	r.y += m_config.insetArriba * e; r.h -= (m_config.insetArriba + m_config.insetAbajo) * e;
 	return r;
 }
 

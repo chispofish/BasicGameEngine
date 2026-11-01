@@ -71,9 +71,9 @@ jobs:
           emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release
           cmake --build build-web --parallel
 
-      - name: Verificar que se generaron index.html, index.js e index.wasm
+      - name: Verificar que se generaron index.html, index.js, index.wasm e index.data
         run: |
-          for f in index.html index.js index.wasm; do
+          for f in index.html index.js index.wasm index.data; do
             test -s "build-web/$f" || { echo "::error::falta build-web/$f"; exit 1; }
           done
           ls -la build-web/index.*
@@ -81,7 +81,7 @@ jobs:
       - name: Ensamblar el sitio
         run: |
           mkdir site
-          cp build-web/index.html build-web/index.js build-web/index.wasm site/
+          cp build-web/index.html build-web/index.js build-web/index.wasm build-web/index.data site/
           touch site/.nojekyll
 
       - name: Prueba de integridad (servidor HTTP local)
@@ -96,7 +96,7 @@ jobs:
             sleep 0.5
           done
 
-          for f in index.html index.js index.wasm; do
+          for f in index.html index.js index.wasm index.data; do
             code=$(curl -s -o "/tmp/$f" -w '%{http_code}' "http://127.0.0.1:8080/$f")
             echo "$f -> HTTP $code"
             test "$code" = "200"
@@ -109,6 +109,16 @@ jobs:
               header = f.read(4)
           assert header == b'\x00asm', f'Cabecera WASM invalida: {header!r}'
           print('Cabecera WASM verificada')
+          PY
+
+          # Test 3.4: --preload-file empaqueta assets/ en index.data y lo declara en index.js.
+          # El .bmp debe figurar en el paquete y su contenido (cabecera "BM") estar en el .data.
+          grep -q 'assets/avatar_run.bmp' /tmp/index.js
+          python3 - <<'PY'
+          data = open('/tmp/index.data', 'rb').read()
+          assert len(data) >= 6966, f'index.data demasiado pequeno: {len(data)} bytes'
+          assert data.startswith(b'BM'), 'index.data no empieza por un BMP valido'
+          print(f'Test 3.4: index.data con avatar_run.bmp ({len(data)} bytes)')
           PY
 
           # emcc minimiza el HTML y elimina las comillas (<canvas id=canvas ...>),

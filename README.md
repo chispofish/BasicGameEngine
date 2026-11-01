@@ -13,6 +13,29 @@ Migrado desde la versión original basada en Win32.
 | 3. Renderizado 2D | `src/Dibujante.*` — primitivas, texto bitmap 5x7; el motor limpia el fondo en cada frame | `tests/test_graficos.cpp` (3.1, 3.2) |
 | 4. Build y CI/CD | `CMakeLists.txt`, `web/minimal_shell.html`, `.github/workflows/deploy.yml` | CI (4.1, 4.2) |
 
+## Juego Runner
+
+Juego "runner" horizontal construido sobre el motor: esquiva los bugs rojos saltando con
+**ESPACIO / ↑** (también reinicia tras GAME OVER). La puntuación es la distancia recorrida y la
+velocidad aumenta con el tiempo. En la web es el `index.html` publicado.
+
+| Módulo | Contenido | QA |
+|---|---|---|
+| R1. Texturas | `src/Textura.*` — carga de BMP con SDL2 (sin SDL_image), color clave magenta / alfa → `SDL_Texture` RAII | `tests/test_jugador.cpp` (1.1, 1.2) |
+| R2. Jugador | `src/Jugador.*` — estados Corriendo/Saltando/Cayendo, gravedad, suelo, animación por tics | `tests/test_jugador.cpp` (2.1, 2.2) |
+| R3.1/3.2. Obstáculos y colisión AABB | `src/Obstaculos.*`, `src/Partida.*` — generación aleatoria (con semilla), destrucción fuera de pantalla, GAME OVER | `tests/test_partida.cpp` (3.1, 3.2) |
+| R3.3. HUD | `src/Hud.*` — puntos, mejor puntuación, velocidad y mensajes con `Dibujante::Texto` | `tests/test_partida.cpp` (3.3) |
+| R3.4. Assets web | `CMakeLists.txt` — `--preload-file assets@/assets` empaqueta `assets/` en `index.data` | CI (3.4) |
+
+`assets/avatar_run.bmp` (6 fotogramas de 16x24: 4 de carrera, salto, caída) se regenera con
+`python3 tools/generar_avatar.py`. Nativo: `./build/runner`. La demo antigua del motor sigue en
+`./build/juego` (solo nativo).
+
+> En Emscripten los archivos del disco no existen: `--preload-file` los empaqueta en `index.data`
+> y los monta en un sistema de archivos virtual **antes de `main()`**. Si añades assets nuevos,
+> basta con ponerlos en `assets/` (se relinka solo). Al publicar hay que subir `index.data` junto
+> a `index.html`, `index.js` e `index.wasm`.
+
 ## Compilar y probar en nativo
 
 ```bash
@@ -41,7 +64,7 @@ emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release
 cmake --build build-web
 ```
 
-Genera `build-web/index.html`, `index.js` e `index.wasm`. Para probarlo (los navegadores no
+Genera `build-web/index.html`, `index.js`, `index.wasm` e `index.data` (los assets). Para probarlo (los navegadores no
 cargan `.wasm` desde `file://`, hay que servirlo por HTTP):
 
 ```bash

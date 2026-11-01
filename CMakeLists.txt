@@ -11,8 +11,10 @@ endif()
 
 option(BGE_SANITIZE "Compilar con AddressSanitizer/UBSan (solo nativo)" OFF)
 
-# --- Biblioteca del motor (Modulos 1, 2 y 3) ------------------------------------
-add_library(nucleo STATIC src/Ventana.cpp src/NucleoMotor.cpp src/Dibujante.cpp)
+# --- Biblioteca del motor (Modulos 1, 2 y 3) y del Runner (texturas, jugador) ---
+add_library(nucleo STATIC
+  src/Ventana.cpp src/NucleoMotor.cpp src/Dibujante.cpp
+  src/Textura.cpp src/Jugador.cpp src/Obstaculos.cpp src/Partida.cpp src/Hud.cpp)
 target_include_directories(nucleo PUBLIC src)
 
 if(EMSCRIPTEN)
@@ -33,20 +35,33 @@ else()
   endif()
 endif()
 
-# --- Ejecutable de demostracion --------------------------------------------------
-add_executable(juego src/main.cpp)
-target_link_libraries(juego PRIVATE nucleo)
+# --- Ejecutables ---------------------------------------------------------------------
+# 'runner' es el juego: se compila en nativo y a WebAssembly. 'juego' es la demo del
+# motor y solo se compila en nativo (en la web index.html es el Runner).
+add_executable(runner src/runner.cpp)
+target_link_libraries(runner PRIVATE nucleo)
 
 if(EMSCRIPTEN)
-  # Salida: index.html + index.js + index.wasm (en el directorio de build)
+  # Salida: index.html + index.js + index.wasm + index.data (en el directorio de build)
   set(BGE_SHELL "${CMAKE_SOURCE_DIR}/web/minimal_shell.html")
-  set_target_properties(juego PROPERTIES
+  set(BGE_ASSETS "${CMAKE_SOURCE_DIR}/assets")
+  file(GLOB_RECURSE BGE_ASSET_FILES "${BGE_ASSETS}/*")
+  set_target_properties(runner PROPERTIES
     OUTPUT_NAME index
     SUFFIX ".html"
-    LINK_DEPENDS "${BGE_SHELL}")          # re-enlaza si cambia la plantilla
-  target_link_options(juego PRIVATE
+    LINK_DEPENDS "${BGE_SHELL};${BGE_ASSET_FILES}")   # re-enlaza si cambia la plantilla o un asset
+  # Equivale a '--preload-file assets', pero con ruta absoluta (el enlazado no se ejecuta
+  # desde la raiz del repo) y '@/assets' fija el destino en el sistema de archivos virtual:
+  # el juego abre "assets/avatar_run.bmp" igual que en nativo. Emscripten empaqueta la
+  # carpeta en index.data y la monta antes de que arranque main().
+  target_link_options(runner PRIVATE
     "SHELL:--shell-file ${BGE_SHELL}"
+    "SHELL:--preload-file ${BGE_ASSETS}@/assets"
     $<$<CONFIG:Debug>:-sASSERTIONS=1>)
+else()
+  target_compile_definitions(runner PRIVATE BGE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
+  add_executable(juego src/main.cpp)
+  target_link_libraries(juego PRIVATE nucleo)
 endif()
 
 # --- Pruebas de QA (solo nativo) ---------------------------------------------------
@@ -62,5 +77,15 @@ if(NOT EMSCRIPTEN)
   target_link_libraries(test_graficos PRIVATE nucleo)
   add_test(NAME qa_modulo_3 COMMAND test_graficos)
 
-  set_tests_properties(qa_modulos_1_2 qa_modulo_3 PROPERTIES ENVIRONMENT "${BGE_TEST_ENV}")
+  add_executable(test_jugador tests/test_jugador.cpp)
+  target_link_libraries(test_jugador PRIVATE nucleo)
+  target_compile_definitions(test_jugador PRIVATE BGE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
+  add_test(NAME qa_runner_modulos_1_2 COMMAND test_jugador)
+
+  add_executable(test_partida tests/test_partida.cpp)
+  target_link_libraries(test_partida PRIVATE nucleo)
+  target_compile_definitions(test_partida PRIVATE BGE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
+  add_test(NAME qa_runner_modulo_3 COMMAND test_partida)
+
+  set_tests_properties(qa_modulos_1_2 qa_modulo_3 qa_runner_modulos_1_2 qa_runner_modulo_3 PROPERTIES ENVIRONMENT "${BGE_TEST_ENV}")
 endif()

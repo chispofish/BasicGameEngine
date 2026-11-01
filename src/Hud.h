@@ -10,6 +10,7 @@
 #pragma once
 
 #include "Partida.h"
+#include "Paleta.h"
 
 #include <string>
 
@@ -22,5 +23,14 @@ namespace Hud
 	// Altura reservada para el HUD superior (nada del juego se dibuja ahi)
 	constexpr int kAlturaHud = 40;
 
-	void Pintar(const Dibujante& d, const Partida& p, int ancho, int alto);
+	struct Opciones
+	{
+		bool sonidoActivo   = true;    // indicador "M: SONIDO"
+		bool resaltarPuntos = false;   // la puntuacion brilla un instante al superar un hito
+	};
+
+	// Texto con sombra (legible sobre el degradado del cielo)
+	int TextoSombra(const Dibujante& d, int x, int y, const std::string& t, Color c, int escala);
+
+	void Pintar(const Dibujante& d, const Partida& p, int ancho, int alto, const Opciones& op = {});
 }

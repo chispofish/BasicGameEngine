@@ -28,6 +28,17 @@ struct ConfigPartida
 	int    ticsBloqueoGameOver = 30;    // 0,5 s a 60 Hz
 };
 
+// Sucesos de la partida desde la ultima llamada a TomarEventos(). El juego los traduce a
+// sonido y efectos visuales; la logica no sabe nada de audio ni de graficos.
+struct EventosPartida
+{
+	bool salto      = false;   // el jugador despega
+	bool aterrizaje = false;   // el jugador toca el suelo
+	bool choque     = false;   // paso a GameOver
+	bool reinicio   = false;   // nueva partida
+	int  hitos      = 0;       // veces que se cruzo un multiplo de 100 puntos
+};
+
 class Partida
 {
 public:
@@ -36,6 +47,9 @@ public:
 	// Un tic de logica. 'saltar' = tecla mantenida (salto en juego; reinicio en GameOver)
 	void Actualizar(double dt, bool saltar);
 	void Reiniciar();
+
+	// Devuelve y borra los sucesos acumulados (puede haber varios tics por frame)
+	EventosPartida TomarEventos() noexcept { const EventosPartida e = m_eventos; m_eventos = {}; return e; }
 
 	EstadoPartida Estado()    const noexcept { return m_estado; }
 	int    Puntos()           const noexcept { return static_cast<int>(m_distancia / m_config.pixelesPorPunto); }
@@ -58,4 +72,6 @@ private:
 	int    m_mejor     = 0;
 	int    m_ticsGameOver = 0;
 	bool   m_saltarPrevio = false;
+	int    m_hitoPrevio   = 0;
+	EventosPartida m_eventos;
 };

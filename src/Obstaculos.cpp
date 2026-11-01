@@ -3,6 +3,8 @@
 //------------------------------------------------------------------------------------
 #include "Obstaculos.h"
 
+#include "Paleta.h"
+
 #include <algorithm>
 #include <cmath>
 
@@ -69,14 +71,28 @@ bool GestorObstaculos::ColisionaCon(const SDL_Rect& caja) const noexcept
 
 void GestorObstaculos::Pintar(const Dibujante& d) const
 {
+	// "Bug" en el mismo estilo que el avatar: contorno oscuro, dos tonos y ojos grandes.
+	// Todo se dibuja DENTRO de la caja de colision (lo que se ve es lo que choca).
 	for (const Obstaculo& o : m_activos)
 	{
 		const SDL_Rect c = o.Caja();
-		d.RectanguloRelleno(c, Colores::Rojo);
-		d.Rectangulo(c, Color{ 120, 20, 20, 255 });
-		// Dos "ojos" de bug para que no sea un bloque liso
-		const int ojo = std::max(3, c.w / 8);
-		d.RectanguloRelleno(SDL_Rect{ c.x + c.w / 4, c.y + c.h / 4, ojo, ojo }, Colores::Blanco);
-		d.RectanguloRelleno(SDL_Rect{ c.x + c.w - c.w / 4 - ojo, c.y + c.h / 4, ojo, ojo }, Colores::Blanco);
+		d.RectanguloRelleno(c, Paleta::Contorno);
+		const SDL_Rect in{ c.x + 2, c.y + 2, c.w - 4, c.h - 4 };
+		d.RectanguloRelleno(in, Paleta::BugCuerpo);
+		d.RectanguloRelleno(SDL_Rect{ in.x, in.y, in.w, 4 }, Paleta::BugLuz);                  // brillo superior
+		d.RectanguloRelleno(SDL_Rect{ in.x, in.y + in.h - 5, in.w, 5 }, Paleta::BugSombra);    // sombra inferior
+
+		const int ojo = std::max(6, c.w / 5);
+		const int ey  = c.y + std::max(6, c.h / 4);
+		const int ex1 = c.x + c.w / 5, ex2 = c.x + c.w - c.w / 5 - ojo;
+		for (int ex : { ex1, ex2 })
+		{
+			d.RectanguloRelleno(SDL_Rect{ ex, ey, ojo, ojo }, Colores::Blanco);
+			d.RectanguloRelleno(SDL_Rect{ ex, ey + 1, ojo / 2, ojo - 2 }, Paleta::Contorno);   // pupila: mira al jugador (izquierda)
+		}
+		// Boca con dientes
+		const int bw = c.w / 2, bx = c.x + (c.w - bw) / 2, by = c.y + c.h - std::max(12, c.h / 4);
+		d.RectanguloRelleno(SDL_Rect{ bx, by, bw, 5 }, Paleta::Contorno);
+		for (int t = bx + 2; t + 3 <= bx + bw - 1; t += 6) d.RectanguloRelleno(SDL_Rect{ t, by, 3, 2 }, Colores::Blanco);
 	}
 }

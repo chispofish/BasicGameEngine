@@ -36,6 +36,8 @@ void Partida::Reiniciar()
 	m_velocidad    = m_config.velocidadInicial;
 	m_distancia    = 0.0;
 	m_ticsGameOver = 0;
+	m_hitoPrevio   = 0;
+	m_eventos.reinicio = true;
 }
 
 void Partida::Actualizar(double dt, bool saltar)
@@ -50,14 +52,20 @@ void Partida::Actualizar(double dt, bool saltar)
 		return;                                   // mundo congelado
 	}
 
+	const bool enSueloAntes = m_jugador.EnElSuelo();
 	m_jugador.Actualizar(dt, saltar);
+	if (enSueloAntes && !m_jugador.EnElSuelo()) m_eventos.salto = true;
+	if (!enSueloAntes && m_jugador.EnElSuelo()) m_eventos.aterrizaje = true;
 	m_obstaculos.Actualizar(dt, m_velocidad);
 	m_distancia += m_velocidad * dt;
 	m_velocidad  = std::min(m_config.velocidadMaxima, m_velocidad + m_config.aceleracion * dt);
 
+	if (const int hito = Puntos() / 100; hito > m_hitoPrevio) { m_eventos.hitos += hito - m_hitoPrevio; m_hitoPrevio = hito; }
+
 	if (m_obstaculos.ColisionaCon(m_jugador.CajaColision()))
 	{
 		m_estado       = EstadoPartida::GameOver;
+		m_eventos.choque = true;
 		m_mejor        = std::max(m_mejor, Puntos());
 		m_ticsGameOver = 0;
 	}

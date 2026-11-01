@@ -16,7 +16,7 @@ Migrado desde la versión original basada en Win32.
 ## Juego Runner
 
 Juego "runner" horizontal construido sobre el motor: esquiva los bugs rojos saltando con
-**ESPACIO / ↑** (también reinicia tras GAME OVER). La puntuación es la distancia recorrida y la
+**ESPACIO / ↑** (también reinicia tras GAME OVER); **M** activa o silencia el sonido. La puntuación es la distancia recorrida y la
 velocidad aumenta con el tiempo. En la web es el `index.html` publicado.
 
 | Módulo | Contenido | QA |
@@ -25,7 +25,13 @@ velocidad aumenta con el tiempo. En la web es el `index.html` publicado.
 | R2. Jugador | `src/Jugador.*` — estados Corriendo/Saltando/Cayendo, gravedad, suelo, animación por tics | `tests/test_jugador.cpp` (2.1, 2.2) |
 | R3.1/3.2. Obstáculos y colisión AABB | `src/Obstaculos.*`, `src/Partida.*` — generación aleatoria (con semilla), destrucción fuera de pantalla, GAME OVER | `tests/test_partida.cpp` (3.1, 3.2) |
 | R3.3. HUD | `src/Hud.*` — puntos, mejor puntuación, velocidad y mensajes con `Dibujante::Texto` | `tests/test_partida.cpp` (3.3) |
+| R4. Mundo, efectos y sonido | `src/Paleta.h` (colores del avatar), `src/Escenario.*` (parallax), `src/Efectos.*` (partículas, sacudida), `src/Sonido.*` (audio sintetizado) | `tests/test_efectos.cpp` (4.1–4.5) |
 | R3.4. Assets web | `CMakeLists.txt` — `--preload-file assets@/assets` empaqueta `assets/` en `index.data` | CI (3.4) |
+
+**Sonido:** sin archivos de audio. Los efectos (salto, aterrizaje, golpe, hito cada 100 puntos, inicio) y una
+música en bucle de 4 s se sintetizan al arrancar con SDL2 puro (`Sintesis`/`Mezclador`/`Sonido`). Sin dispositivo
+de audio el juego sigue mudo. En el navegador el audio empieza tras la primera pulsación de tecla o clic.
+**Estilo:** todos los colores salen del avatar (`Paleta.h`); el Test 4.1 comprueba que siguen cerca de los del sprite.
 
 `assets/avatar_run.bmp` (6 fotogramas de 64x90: 4 de trote, salto, caída) se genera desde `tools/avatar_fuente.webp` con
 `python3 tools/generar_avatar.py` (requiere Pillow y numpy). Nativo: `./build/runner`. La demo antigua del motor sigue en

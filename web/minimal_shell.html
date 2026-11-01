@@ -10,24 +10,24 @@
     html, body { height: 100%; margin: 0; }
     body {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 14px; padding: 16px; background: #0d1020; color: #c9d1e8;
+      gap: 14px; padding: 16px; background: #0e0620; color: #d9c8f0;
       font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     }
     h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: .04em; color: #fff; }
     #marco {
       position: relative; width: min(100%, 640px); aspect-ratio: 4 / 3;
-      background: #141a33; border: 1px solid #2a3358; border-radius: 8px; overflow: hidden;
+      background: #1b0b3a; border: 1px solid #4a2a7a; border-radius: 8px; overflow: hidden;
       box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
     }
     canvas#canvas { display: block; width: 100%; height: 100%; outline: none; background: #000; }
     #estado {
       position: absolute; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 12px; padding: 24px;
-      text-align: center; background: #141a33; transition: opacity .25s;
+      text-align: center; background: #1b0b3a; transition: opacity .25s;
     }
     #estado.oculto { opacity: 0; pointer-events: none; }
-    #barra { width: 60%; height: 6px; background: #232b4d; border-radius: 3px; overflow: hidden; }
-    #barra > i { display: block; height: 100%; width: 0; background: #f0b428; transition: width .15s; }
+    #barra { width: 60%; height: 6px; background: #3a1f66; border-radius: 3px; overflow: hidden; }
+    #barra > i { display: block; height: 100%; width: 0; background: #ecbe30; transition: width .15s; }
     #error {
       display: none; position: absolute; inset: 0; align-items: center; justify-content: center;
       flex-direction: column; gap: 8px; padding: 24px; text-align: center;
@@ -35,7 +35,7 @@
     }
     #error.visible { display: flex; }
     #error code { display: block; max-width: 100%; overflow-wrap: anywhere; font-size: 12px; color: #ffb3b8; }
-    small { color: #7d89b3; }
+    small { color: #9a86c4; }
     noscript { color: #ffb3b8; }
   </style>
 </head>

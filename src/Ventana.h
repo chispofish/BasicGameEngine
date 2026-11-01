@@ -25,6 +25,7 @@ struct ConfigVentana
 	int         ancho  = 640;
 	int         altura = 480;
 	bool        vsync  = true;   // se pide sincronizacion vertical si esta disponible
+	bool        escSale = true;  // ESC cierra el programa (en web conviene false)
 };
 
 //------------------------------------------------------------------------------------

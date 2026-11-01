@@ -143,7 +143,10 @@ void NucleoMotor::EjecutarFrame()
 	if (!m_ejecutando)
 		return;
 
-	// 4) Renderizado libre: una vez por iteracion
+	// 4) Renderizado libre: una vez por iteracion. Se limpia todo el back buffer,
+	//    se pinta y se presenta (doble buffer de SDL: nunca se ve un frame a medias).
+	if (m_config.limpiarCadaFrame)
+		Dibujante(m_ventana.Renderizador()).Limpiar(m_config.colorFondo);
 	m_juego.Pintar(m_ventana.Renderizador());
 	SDL_RenderPresent(m_ventana.Renderizador());
 	++m_estadisticas.frames;

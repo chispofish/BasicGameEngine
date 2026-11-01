@@ -14,6 +14,7 @@
 //------------------------------------------------------------------------------------
 #pragma once
 
+#include "Dibujante.h"
 #include "Ventana.h"
 
 #include <cstdint>
@@ -34,8 +35,9 @@ public:
 	// FJ_CicloJuego: un tic de logica a paso fijo. 'dt' son segundos (1/frecuencia).
 	virtual void Actualizar(double dt) = 0;
 
-	// FJ_PintarJuego(HDC) -> FJ_PintarJuego(SDL_Renderer*). El motor llama a
-	// SDL_RenderPresent() despues de este metodo.
+	// FJ_PintarJuego(HDC) -> FJ_PintarJuego(SDL_Renderer*). El motor limpia el fondo
+	// antes (ConfigMotor::colorFondo) y llama a SDL_RenderPresent() despues.
+	// Usa Dibujante(renderizador) para primitivas y texto.
 	virtual void Pintar(SDL_Renderer* renderizador) = 0;
 
 	// FJ_DetenerJuego / FJ_ReactivarJuego: la ventana pierde / recupera el foco.
@@ -54,6 +56,11 @@ struct ConfigMotor
 	ConfigVentana ventana;
 	std::uint32_t frecuencia        = 60;   // tics de logica por segundo
 	std::uint32_t maxPasosPorFrame  = 5;    // evita la "espiral de la muerte"
+
+	// Modulo 3: el motor limpia el back buffer con este color ANTES de cada Pintar(),
+	// de modo que ningun frame arrastra restos del anterior (causa tipica de parpadeo).
+	Color colorFondo         = Colores::Fondo;
+	bool  limpiarCadaFrame   = true;
 };
 
 struct EstadisticasMotor

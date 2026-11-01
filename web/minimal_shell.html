@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BasicGameEngine</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; padding: 16px; background: #0d1020; color: #c9d1e8;
+      font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: .04em; color: #fff; }
+    #marco {
+      position: relative; width: min(100%, 640px); aspect-ratio: 4 / 3;
+      background: #141a33; border: 1px solid #2a3358; border-radius: 8px; overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
+    }
+    canvas#canvas { display: block; width: 100%; height: 100%; outline: none; background: #000; }
+    #estado {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 12px; padding: 24px;
+      text-align: center; background: #141a33; transition: opacity .25s;
+    }
+    #estado.oculto { opacity: 0; pointer-events: none; }
+    #barra { width: 60%; height: 6px; background: #232b4d; border-radius: 3px; overflow: hidden; }
+    #barra > i { display: block; height: 100%; width: 0; background: #f0b428; transition: width .15s; }
+    #error {
+      display: none; position: absolute; inset: 0; align-items: center; justify-content: center;
+      flex-direction: column; gap: 8px; padding: 24px; text-align: center;
+      background: rgba(60, 12, 16, .96); color: #ffd7d9;
+    }
+    #error.visible { display: flex; }
+    #error code { display: block; max-width: 100%; overflow-wrap: anywhere; font-size: 12px; color: #ffb3b8; }
+    small { color: #7d89b3; }
+    noscript { color: #ffb3b8; }
+  </style>
+</head>
+<body>
+  <h1>BasicGameEngine</h1>
+
+  <div id="marco">
+    <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
+    <div id="estado" role="status" aria-live="polite">
+      <div id="texto">Cargando…</div>
+      <div id="barra"><i></i></div>
+    </div>
+    <div id="error" role="alert">
+      <strong>No se pudo iniciar el juego</strong>
+      <span id="error-mensaje"></span>
+      <code id="error-detalle"></code>
+      <small>Recarga la página. Si abriste el archivo con <code style="display:inline">file://</code>,
+        sírvelo por HTTP (<code style="display:inline">python3 -m http.server</code>).</small>
+    </div>
+  </div>
+
+  <small>Flechas / WASD para mover el cuadrado azul. Haz clic en el juego para darle el foco.</small>
+  <noscript>Este juego necesita JavaScript y WebAssembly.</noscript>
+
+  <script>
+    (function () {
+      var canvas = document.getElementById('canvas');
+      var estado = document.getElementById('estado');
+      var texto = document.getElementById('texto');
+      var barra = document.querySelector('#barra > i');
+      var errorBox = document.getElementById('error');
+      var errorMsg = document.getElementById('error-mensaje');
+      var errorDet = document.getElementById('error-detalle');
+      var fallo = false;
+
+      function mostrarError(mensaje, detalle) {
+        if (fallo) return;
+        fallo = true;
+        errorMsg.textContent = mensaje;
+        errorDet.textContent = detalle ? String(detalle) : '';
+        errorBox.classList.add('visible');
+        estado.classList.add('oculto');
+      }
+
+      if (typeof WebAssembly !== 'object') {
+        mostrarError('Tu navegador no soporta WebAssembly.', '');
+      }
+
+      // Evita que las flechas / espacio desplacen la pagina mientras se juega
+      window.addEventListener('keydown', function (e) {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].indexOf(e.key) !== -1) e.preventDefault();
+      }, { passive: false });
+      canvas.addEventListener('mousedown', function () { canvas.focus(); });
+
+      // Un error de carga o de ejecucion fuera de Emscripten (script 404, wasm corrupto...)
+      window.addEventListener('error', function (e) {
+        mostrarError('Error al cargar o ejecutar el juego.', e.message || (e.target && e.target.src));
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) {
+        mostrarError('Error al cargar o ejecutar el juego.', e.reason && (e.reason.message || e.reason));
+      });
+
+      // Perdida del contexto WebGL (p. ej. la GPU se reinicia)
+      canvas.addEventListener('webglcontextlost', function (e) {
+        e.preventDefault();
+        mostrarError('Se perdió el contexto gráfico (WebGL).', 'Recarga la página para continuar.');
+      }, false);
+
+      window.Module = {
+        canvas: canvas,
+        print: function (t) { console.log(t); },
+        printErr: function (t) { console.error(t); },
+        onAbort: function (what) { mostrarError('El programa se detuvo inesperadamente.', what); },
+        totalDependencies: 0,
+        monitorRunDependencies: function (restantes) {
+          this.totalDependencies = Math.max(this.totalDependencies, restantes);
+          var hechas = this.totalDependencies - restantes;
+          barra.style.width = (this.totalDependencies ? (100 * hechas / this.totalDependencies) : 100) + '%';
+        },
+        setStatus: function (s) {
+          if (fallo) return;
+          if (s) { texto.textContent = s; estado.classList.remove('oculto'); }
+          else   { barra.style.width = '100%'; estado.classList.add('oculto'); canvas.focus(); }
+        }
+      };
+    })();
+  </script>
+  {{{ SCRIPT }}}
+</body>
+</html>

@@ -89,7 +89,7 @@ EventosFrame Ventana::ProcesarEventos()
 			break;
 
 		case SDL_KEYDOWN:
-			if (e.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+			if (m_config.escSale && e.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
 				resultado.salir = true;
 			if (e.key.keysym.scancode < SDL_NUM_SCANCODES)
 				m_teclas[e.key.keysym.scancode] = true;
